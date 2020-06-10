@@ -14,7 +14,10 @@ class SpotifyClient(object):
         self.api_token = self.token_refresher.refresh()
 
     def search_track(self, artist, track):
-        _artist = artist.strip("Ft.")
+        _artist  = " ".join([
+            word for word in artist.split()
+            if word.lower() not in ["ft."]
+        ])
         query = urllib.parse.quote(f"{_artist} {track}")
         url = f"https://api.spotify.com/v1/search?q={query}&type=track"
         response = requests.get(
