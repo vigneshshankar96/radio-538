@@ -14,12 +14,30 @@ if __name__ == "__main__":
     pst_timezone = pytz.timezone('US/Pacific')
     ist_timezone = pytz.timezone('Asia/Kolkata')
 
+    # Radio Station ID
+    radio_538_non_stop_id = "144282"
+    # Spotify Playlist ID
     playlist_id = spotify_client.search_playlist('Radio 538 Non Stop')
+    # Shelf life of Spotify Authentication Token (in seconds)
+    spotify_token_shelf_life = 3600
+
+    token_expiry_timestamp = (
+        time.time() + spotify_token_shelf_life - 10
+    )
 
     while True:
+        current_time = time.time()
+
+        # If current token is about to expire, refresh token
+        if current_time >= token_expiry_timestamp:
+            token_expiry_timestamp = (
+                current_time + spotify_token_shelf_life - 10
+            )
+            spotify_client.refresh_token()
+
+        # Query playlist info of station
         query = "http://api.dar.fm/playlist.php"
-        radio_538_non_stop_id = "144282"
-        r = requests.get(
+        response = requests.get(
             query,
             params={
                 "station_id": radio_538_non_stop_id,
@@ -29,33 +47,44 @@ if __name__ == "__main__":
                 'User-Agent': 'Chrome/72.0.3626.109',
             }
         )
-
-        current_time = time.time()
-        radio_station = BeautifulSoup(r.text, 'html.parser').playlist.station
+        radio_station = (
+            BeautifulSoup(response.text, 'html.parser').playlist.station
+        )
         local_time = datetime.datetime.strptime(
             radio_station.songstamp.text.strip(),
             "%Y-%m-%d %H:%M:%S"
         )
         utc_time = pst_timezone.localize(local_time, is_dst=None)
-        song_stamp = utc_time.astimezone(ist_timezone)
 
+        # Start time, Title, Artist and Seconds remaining of current track
+        track_start_timestamp = utc_time.astimezone(ist_timezone).ctime()
         title = radio_station.title.text.strip()
         artist = radio_station.artist.text.strip()
         seconds_remaining = int(radio_station.seconds_remaining.text)
-        song_length = 0
+
+        # If ad was foung playing, wait for it to get over
         if seconds_remaining == 0:
             time.sleep(15)
             continue
-        print(f'{song_stamp} | "{title}" by {artist}')
+        print("="*80)
+        print(f'"{title}" by "{artist}" aired at {track_start_timestamp} IST')
+
+        # Search if the track aired is available in Spotify, get ID if yes
         try:
-            song_id = spotify_client.search_song(artist, title)
-            print(f'Found song on Spotify by ID: {song_id}')
+            track_id = spotify_client.search_track(artist, title)
+            print(f'✓ Found track on Spotify by ID: {track_id}')
         except:
-            song_id = None
-            print(f'Song not found on Spotify')
-        if song_id:
-            if spotify_client.add_song_to_playlist(song_id, playlist_id):
-                print(f'Added song to playlist')
+            track_id = None
+            print(f'× Track not found on Spotify')
+
+        # If Track ID was fetched, add it to playlist
+        if track_id:
+            if track_id in spotify_client.get_tracks_in_playlist(playlist_id):
+                print(f'✓ Track already exists in Playlist ID: {playlist_id}')
+            elif spotify_client.add_track_to_playlist(track_id, playlist_id):
+                print(f'✓ Added to Spotify playlist of ID: {playlist_id}')
             else:
-                print(f'Song not added to playlist')
+                print(f'× Track not added to Spotify playlist')
+
+        # Wait until current track has finished before retrying
         time.sleep(seconds_remaining)
