@@ -1,5 +1,6 @@
-import requests
 import urllib.parse
+
+import requests
 
 from creds.refresher import Refresher
 
@@ -14,7 +15,7 @@ class SpotifyClient(object):
         self.api_token = self.token_refresher.refresh()
 
     def search_track(self, artist, track):
-        _artist  = " ".join([
+        _artist = " ".join([
             word for word in artist.split()
             if word.lower() not in ["ft."]
         ])
@@ -48,15 +49,15 @@ class SpotifyClient(object):
         )
         response_json = response.json()
 
-        all_playlists = response_json['items']
+        all_playlists = response_json["items"]
         for _playlist in all_playlists:
-            if _playlist['name'] == playlist:
-                return _playlist['id']
+            if _playlist["name"] == playlist:
+                return _playlist["id"]
 
         raise Exception(f"No playlist found for {playlist}")
 
     def add_track_to_playlist(self, track_id, playlist_id):
-        track_uris = ['spotify:track:' + track_id]
+        track_uris = [f"spotify:track:{track_id}"]
         url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
         response = requests.post(
             url,

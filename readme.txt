@@ -1,3 +1,5 @@
+This project is to automate searching and identifying tracks aired in radio and adding them to Spotify Playlist
+
 Radio API
 API Documentation: https://docs.google.com/document/d/12HNoXI-z40QLQiSi30g2qSWb8U9YbMd4u5_jrre-YTw/edit
 Partner token: http://dar.fm/partners.php
