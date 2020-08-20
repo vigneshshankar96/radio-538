@@ -92,13 +92,13 @@ if __name__ == "__main__":
             logging.info(f"+ Found track on Spotify by ID: {track_id}")
         except:
             track_id = None
-            logging.info(f"- Track not found on Spotify")
+            logging.info(f"! Track not found on Spotify")
 
         # If Track ID was fetched, add it to playlist
         if track_id:
             if track_id in spotify_client.get_tracks_in_playlist(playlist_id):
                 logging.info(
-                    f"+ Track already exists in Playlist ID: {playlist_id}"
+                    f"! Track already exists in Playlist ID: {playlist_id}"
                 )
             elif spotify_client.add_track_to_playlist(track_id, playlist_id):
                 logging.info(
